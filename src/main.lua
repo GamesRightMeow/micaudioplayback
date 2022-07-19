@@ -1,11 +1,13 @@
 import("CoreLibs/graphics")
 import("CoreLibs/easing")
 
+-- 2 min audio buffer is arbitrary, but large values will cause the device to run out of memory and crash
 local buffer = playdate.sound.sample.new(120, playdate.sound.kFormat16bitMono)
 local source = playdate.sound.sampleplayer.new(buffer)
 local lastSample = {}
 local isRecording = false
 
+-- audio is often too quiet, so use gain effect to increase volume
 local gain = 0.0
 local effect = playdate.sound.overdrive.new()
 effect:setMix(1)
@@ -14,8 +16,10 @@ playdate.sound.addEffect(effect)
 
 playdate.sound.getHeadphoneState(function() 
   if playdate.isSimulator then
+    -- playback on both when in simulator
     playdate.sound.setOutputsActive(true, true)
   else
+    -- force playback on speaker (normal PD behavior is to only playback on headphones when plugged in)
     playdate.sound.setOutputsActive(false, true)
   end
 end)
@@ -54,7 +58,9 @@ function playdate.update()
   end
 
   local micLevel = playdate.sound.micinput.getLevel()
+  -- use ease so that quiet sounds are still noticable in the bar
   micLevel = playdate.easingFunctions.outQuart(micLevel, 0, 1, 1) 
+
   playdate.graphics.clear()
   playdate.graphics.drawText("Ⓐrecording: "..tostring(isRecording), 0, 0)
   playdate.graphics.drawText("mic activity:", 0, 17)
